@@ -25,8 +25,12 @@ end
 function UTILS.download(url)
     if not http then return nil, "HTTP disabled" end
     local separator = url:find("?", 1, true) and "&" or "?"
-    local res, err = http.get(url .. separator .. "t=" .. os.epoch("utc"), { ["Cache-Control"] = "no-cache" }, true)
-    if not res then return nil, tostring(err) end
+    local res, err, failRes = http.get(url .. separator .. "t=" .. os.epoch("utc"), { ["Cache-Control"] = "no-cache" }, true)
+    if not res then 
+        local code = failRes and failRes.getResponseCode()
+        if failRes then failRes.close() end
+        return nil, tostring(err), code    
+    end
     local code = res.getResponseCode()
     local body = res.readAll()
     res.close()

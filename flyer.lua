@@ -14,6 +14,7 @@ end
 
 local basalt = require("basalt")
 local config = import("config")
+local access = import("access")
 local stateLib = import("state")
 local rsio = import("rsio")
 local utils = import("utils")
@@ -26,6 +27,13 @@ local autopilot = import("autopilot")
 local actuators = import("actuators")
 local ui = import("ui")
 local monitorUI = import("monitor_ui")
+
+print("Checking access...")
+local allowed, message = access.enforce(utils)
+if not allowed then
+    printError(message)
+    return
+end
 
 local cfg = config.load()
 rsio.init(cfg)
@@ -65,3 +73,8 @@ local ok, err = pcall(parallel.waitForAll,
 
 rsio.reset()
 if not ok then printError(err) end
+
+local allowedOnStop, stopMessage = access.enforce(utils)
+if not allowedOnStop then
+    printError(stopMessage)
+end
