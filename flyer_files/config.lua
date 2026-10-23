@@ -49,10 +49,10 @@ CONFIG.DEFAULTS = {
         right    = { device = "relay", side = "right" },
     },
     persistence = {
-        enabled = false,
+        enabled = true,
         interval = 1,
         altitude = true,
-        destination = false,
+        destination = true,
         autopilot = false,
     }
 }
