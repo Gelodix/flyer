@@ -4,7 +4,7 @@ return {
         files = { "installer.lua", "startup.lua" },
     },
 
-    version = "2.0.0",
+    version = "2.1.0",
     files = {
         "config.lua",
         "state.lua",
@@ -19,5 +19,6 @@ return {
         "actuators.lua",
         "ui.lua",
         "monitor_ui.lua",
+        "save_state.lua",
     },
 }

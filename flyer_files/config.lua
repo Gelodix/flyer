@@ -48,6 +48,13 @@ CONFIG.DEFAULTS = {
         left     = { device = "relay", side = "left" },
         right    = { device = "relay", side = "right" },
     },
+    persistence = {
+        enabled = false,
+        interval = 1,
+        altitude = true,
+        destination = false,
+        autopilot = false,
+    }
 }
 
 local function merge(defaults, user)

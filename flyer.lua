@@ -26,9 +26,13 @@ local autopilot = import("autopilot")
 local actuators = import("actuators")
 local ui = import("ui")
 local monitorUI = import("monitor_ui")
+local saveState = import("save_state")
+
 
 local cfg = config.load()
 rsio.init(cfg)
+
+
 
 local monitor = peripheral.find("monitor")
 if not monitor then
@@ -46,6 +50,12 @@ local ctx = {
     basalt = basalt,
     monitor = monitor,
 }
+
+saveState.init(ctx)
+
+local state = stateLib.new(cfg)
+local persistedVariables = saveState.variablesFor(cfg.persistence)
+saveState.load(state, persistedVariables)
 
 local function taskUI()
     ui.create(ctx)
