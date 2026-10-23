@@ -53,9 +53,8 @@ local ctx = {
 
 saveState.init(ctx)
 
-local state = stateLib.new(cfg)
-local persistedVariables = saveState.variablesFor(cfg.persistence)
-saveState.load(state, persistedVariables)
+ctx.persistedVariables = saveState.variablesFor(cfg.persistence)
+saveState.load(ctx.persistedVariables)
 
 local function taskUI()
     ui.create(ctx)
