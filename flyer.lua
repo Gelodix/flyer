@@ -70,6 +70,7 @@ local ok, err = pcall(parallel.waitForAll,
     function() altitude.run(ctx) end,
     function() autopilot.run(ctx) end,
     function() actuators.run(ctx) end,
+    function() saveState.run(ctx) end,
     taskUI
 )
 

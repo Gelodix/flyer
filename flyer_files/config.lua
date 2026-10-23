@@ -29,7 +29,7 @@ CONFIG.DEFAULTS = {
 
     bluemapUrl ="https://projectcrowbar.com/bluemap/maps/s3_overworld/live/players.json",
 
-    relay = "bottom",
+    relay = "front",
 
     inputs = {
         toggleAltitude   = { device = "computer", side = "top" },
