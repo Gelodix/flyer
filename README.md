@@ -1,1 +1,0 @@
-CC Autopilot and altitude controller for gyro and thruster based flyer with Aeronautics
