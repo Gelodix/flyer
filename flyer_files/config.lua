@@ -54,6 +54,12 @@ CONFIG.DEFAULTS = {
         altitude = true,
         destination = true,
         autopilot = false,
+    },
+    rednet = {
+        enabled = false,
+        modem = "left",
+        protocol = "flyer",
+        password = "",
     }
 }
 

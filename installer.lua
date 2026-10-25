@@ -17,8 +17,6 @@ local MAIN_FILE = "flyer.lua"
 local FILES_DIR = "flyer_files"
 local LOCAL_MANIFEST = fs.combine(FILES_DIR, ".manifest")
 local INSTALLER_VERSION_FILE = ".installer_version"
-local BACKUP_DIR = "backup/flyer"
-local INSTALLER_BACKUP_DIR = "backup/installer"
 local BASALT_URL = "https://basalt.madefor.cc/2.5/install.lua"
 
 local DEFAULT = {
@@ -40,6 +38,8 @@ local function readFile(path)
 end
 
 local function writeFile(path, content)
+    local dir = fs.getDir(path)
+    if dir ~= "" then fs.makeDir(dir) end
     local file = fs.open(path, "w")
     file.write(content)
     file.close()
@@ -53,16 +53,6 @@ local function download(url)
     local body = res.readAll()
     res.close()
     return body
-end
-
-local function backup(backupDir, paths)
-    fs.delete(backupDir)
-    fs.makeDir(backupDir)
-    for _, path in ipairs(paths) do
-        if fs.exists(path) then
-            fs.move(path, fs.combine(backupDir, path))
-        end
-    end
 end
 
 local function downloadAll(baseUrl, files)
@@ -158,7 +148,6 @@ function INSTALLER.updateInstaller(config, manifest)
     local bodies, err = downloadAll(config.baseUrl, files)
     if not bodies then return false, err end
 
-    backup(INSTALLER_BACKUP_DIR, files)
     for _, file in ipairs(files) do
         writeFile(file, bodies[file])
     end
@@ -198,23 +187,13 @@ function INSTALLER.update(config, manifest)
     local bodies, err = downloadAll(config.baseUrl, remoteFiles)
     if not bodies then return false, err end
 
-
-    fs.makeDir(FILES_DIR)
-    for _, file in ipairs(remoteFiles) do
-        writeFile(file, bodies[file])
-    end
-
-    local installed = readLocalManifest()
-    if installed and installed.beta and not config.beta then
-        fs.delete(MAIN_FILE)
-        fs.delete(FILES_DIR)
-    else
-        backup(BACKUP_DIR, { MAIN_FILE, FILES_DIR })
-    end
+    fs.delete(MAIN_FILE)
+    fs.delete(FILES_DIR)
 
     for _, file in ipairs(remoteFiles) do
         writeFile(file, bodies[file])
     end
+    
     manifest.beta = config.beta
     writeFile(LOCAL_MANIFEST, textutils.serialize(manifest))
     return true, manifest.version .. (config.beta and " (beta)" or "")

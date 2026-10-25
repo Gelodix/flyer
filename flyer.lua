@@ -27,6 +27,7 @@ local actuators = import("actuators")
 local ui = import("ui")
 local monitorUI = import("monitor_ui")
 local saveState = import("save_state")
+local remote = import("remote")
 
 
 local cfg = config.load()
@@ -52,6 +53,7 @@ local ctx = {
 }
 
 saveState.init(ctx)
+remote.init(ctx.cfg)
 
 ctx.persistedVariables = saveState.variablesFor(cfg.persistence)
 saveState.load(ctx.persistedVariables)
@@ -70,6 +72,7 @@ local ok, err = pcall(parallel.waitForAll,
     function() autopilot.run(ctx) end,
     function() actuators.run(ctx) end,
     function() saveState.run(ctx) end,
+    function() remote.run(ctx) end,
     taskUI
 )
 

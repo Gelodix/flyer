@@ -1,10 +1,10 @@
 return {
     installer = {
-        version = "1.0.0",
+        version = "1.0.1",
         files = { "installer.lua", "startup.lua" },
     },
 
-    version = "2.1.2",
+    version = "2.2.0",
     files = {
         "config.lua",
         "state.lua",
@@ -20,5 +20,8 @@ return {
         "ui.lua",
         "monitor_ui.lua",
         "save_state.lua",
+        "auth.lua",
+        "remote.lua",
+        "libraries/SHA256.lua",
     },
 }
