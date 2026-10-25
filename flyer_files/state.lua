@@ -39,6 +39,7 @@ function STATE.new(cfg)
         xVelocity = 0,
         zVelocity = 0,
         yVelocity = 0,
+        yawRate = 0,
 
         -- altitude control
         aimedHeight = 60,

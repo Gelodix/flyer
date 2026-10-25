@@ -38,6 +38,16 @@ CONFIG.DEFAULTS = {
         learningRate = 0.2,
     },
 
+    steering = {
+        useLegacy = true,
+        headingGain = 1,
+        maxYawRate = 20,
+        rateGain = 0.3,
+        maxTurnThrust = 8,
+        headingDeadBand = 1,
+        rateDeadband = 1,
+    },
+
     bluemapUrl ="https://projectcrowbar.com/bluemap/maps/s3_overworld/live/players.json",
 
     -- optional aliases for the relays used for I/O. Ex: { front_relay = "redstone_relay_35"}

@@ -29,7 +29,7 @@ local function brakeToStop(state)
     return false
 end
 
-local function steer(state, angleError, dt)
+local function steerLegacy(state, angleError, dt)
     local errorDelta = (angleError - state.lastAngleError + 180) % 360 - 180
     local errorRate = errorDelta / dt
     state.lastAngleError = angleError
@@ -60,6 +60,29 @@ local function steer(state, angleError, dt)
         else
             state.rightThrust = math.max(minTurnThrust,math.floor(math.abs(yawCorrection)))
         end
+    end
+end
+
+local turnResidual = 0
+
+local function steerRate(state, settings, angleError)
+    state.leftThrust = 0
+    state.rightThrust = 0
+    if math.abs(angleError) < settings.headingDeadBand and math.abs(state.yawRate) < settings.rateDeadband then
+        turnResidual = 0
+        return
+    end
+
+    local targetRate = utils.clamp(angleError * settings.headingGain, -settings.maxYawRate, settings.maxYawRate)
+    local thrust = utils.clamp((targetRate - state.yawRate) * settings.rateGain, -settings.maxTurnThrust, settings.maxTurnThrust)
+
+    turnResidual = turnResidual + math.abs(thrust)
+    local level = math.floor(turnResidual)
+    turnResidual = turnResidual - level
+    if thrust > 0 then
+        state.leftThrust = level
+    else
+        state.rightThrust = level
     end
 end
 
@@ -99,7 +122,7 @@ local function cruise(state, angleError, approachSpeed, targetSpeed)
     end
 end
 
-local function update(state)
+local function update(state, cfg)
     local dx = state.destination_x - state.x
     local dz = state.destination_z - state.z
     state.destinationDistance =  math.sqrt(dx^2 + dz^2)
@@ -158,8 +181,10 @@ local function update(state)
             end
         end
         angleError = 0
+    elseif cfg.steering.useLegacy then
+        steerLegacy(state, angleError, dt)
     else
-        steer(state, angleError, dt)
+        steerRate(state, cfg.steering, angleError)
     end
 
     local baseTargetSpeed = math.max(0, (state.destinationDistance - state.destinationRadius) * state.brakingFactor)
@@ -184,7 +209,7 @@ function AUTOPILOT.run(ctx)
         end
 
         if state.autopilotEnabled and (state.hasSetDestination or state.trackerEnabled) then
-            update(state)
+            update(state, ctx.cfg)
         else
             stopHorizontal(state)
         end

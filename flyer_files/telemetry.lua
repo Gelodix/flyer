@@ -1,7 +1,10 @@
 local TELEMETRY = {}
 
+local YAW_RATE_SMOOTHING = 0.5
+
 function TELEMETRY.run(ctx)
     local state, utils = ctx.state, ctx.utils
+    local lastYaw, lastTime
         while true do 
         if sublevel and sublevel.isInPlotGrid() then
             local pose = sublevel.getLogicalPose()
@@ -20,6 +23,13 @@ function TELEMETRY.run(ctx)
 
                 local rawYawDeg = utils.yawFromQuaternion(w, x, y, z)
                 state.yaw = (rawYawDeg + 360) % 360
+                local now = os.clock()
+                if lastYaw and now > lastTime then
+                    local delta = (state.yaw - lastYaw + 180) % 360 - 180
+                    local rate = delta / (now - lastTime)
+                    state.yawRate = state.yawRate + (rate - state.yawRate) * YAW_RATE_SMOOTHING
+                end
+                lastYaw, lastTime = state.yaw, now
             end
 
             local velocity = sublevel.getLinearVelocity()
