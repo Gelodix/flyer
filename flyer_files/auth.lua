@@ -21,6 +21,7 @@ local function encode(value)
     elseif kind == "string" then
         return ("%q"):format(value)
     end
+    return tostring(value)
 end
 
 -- format the needed parts of the message to sign them
