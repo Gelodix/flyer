@@ -78,7 +78,16 @@ function COMMANDS.setDestination(ctx, value)
     return true
 end
 
-local function status(state)
+local function destinationsList(saved)
+    local list = {}
+    for i, dest in ipairs(saved) do
+        list[i] = {name = dest.name, x = dest.x, z = dest.z, y = dest.y}
+    end
+    return list
+end
+
+local function status(ctx, withDestinations)
+    local state = ctx.state
     return {
         x = state.x,
         z = state.z,
@@ -89,13 +98,14 @@ local function status(state)
         autopilotEnabled = state.autopilotEnabled,
         travelHeight = state.travelHeight,
         hasSetDestination = state.hasSetDestination,
-        destinations = state.hasSetDestination and {
+        destination = state.hasSetDestination and {
             name = state.destName,
             x = state.destination_x,
             z = state.destination_z,
             y = state.destination_y,
             distance = state.destinationDistance,
         } or nil,
+        savedDestinations = withDestinations and destinationsList(ctx.savedDestinations) or nil,
     }
 end
 
@@ -146,7 +156,7 @@ function REMOTE.run(ctx)
             local reply = auth.sign({
                 target = sender,
                 command = "reply",
-                value = { ok = ok, message = message, status = status(ctx.state)},
+                value = { ok = ok, message = message, status = status(ctx, request.command == "status")},
             }, settings.password)
             rednet.send(sender, reply, settings.protocol)
         end
