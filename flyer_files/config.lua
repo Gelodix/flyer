@@ -29,8 +29,17 @@ CONFIG.DEFAULTS = {
         thrusterMaxForce = 800,
     },
 
+    altitudeController = {
+        useLegacy = true,
+        heightGain = 0.5,
+        maxClimbSpeed = 10,
+        maxDescentSpeed = 8,
+        speedGain = 1,
+        learningRate = 0.2,
+    },
+
     bluemapUrl ="https://projectcrowbar.com/bluemap/maps/s3_overworld/live/players.json",
-    
+
     -- optional aliases for the relays used for I/O. Ex: { front_relay = "redstone_relay_35"}
     relays = {},
 

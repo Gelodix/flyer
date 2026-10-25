@@ -26,6 +26,7 @@ function TELEMETRY.run(ctx)
             if velocity then
                 state.speed = math.sqrt(velocity.x^2 + velocity.z^2)
                 state.xVelocity = velocity.x
+                state.yVelocity = velocity.y
                 state.zVelocity = velocity.z
             end
         end

@@ -38,6 +38,7 @@ function STATE.new(cfg)
         speed = 0,
         xVelocity = 0,
         zVelocity = 0,
+        yVelocity = 0,
 
         -- altitude control
         aimedHeight = 60,
@@ -45,6 +46,7 @@ function STATE.new(cfg)
         heightControlEnabled = false,
         increaseAltitude = false,
         decreaseAltitude = false,
+        hoverLevel = 0,
 
         -- autopilot logic
         autopilotEnabled = false,
