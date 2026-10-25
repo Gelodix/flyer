@@ -3,8 +3,9 @@ local UI = {}
 local function cleanAltitudeInput(self)
     local value = self:getText()
     if type(value) ~= "string" then return end
-    local cleanValue = value:gsub("%D", "")
-    cleanValue = string.sub(cleanValue, 1, 4)
+    local cleanValue = value:gsub(",", "."):gsub("[^%d%.]", "")
+    local integer, dot, decimals = cleanValue:match("^(%d*)(%.?)(%d*)")
+    cleanValue = integer:sub(1, 4) .. dot .. decimals:sub(1, 2)
     if value ~= cleanValue then
         self:setText(cleanValue)
     end
@@ -130,7 +131,7 @@ local function createMainUI(ctx, main, shared)
     basalt.schedule(function()
         while true do
             labelCurrentAltitude:setText("Current altitude : " .. math.floor(state.currentHeight))
-            labelAimedAltitude:setText("Aimed altitude : " .. math.floor(state.aimedHeight))
+            labelAimedAltitude:setText(("Aimed altitude : %.1f"):format(state.aimedHeight))
             labelDist:setText("Dist: " .. math.floor(state.destinationDistance) .. "m")
             labelYaw:setText(string.format("Yaw/Aim: %1.f / %1.f", state.yaw, state.aimedAngle))
 

@@ -17,7 +17,7 @@ function MONITOR_UI.create(ctx)
     basalt.schedule(function()
         while true do
             labelCurrentAltitude:setText("Current Y : " .. math.floor(state.currentHeight))
-            labelAimedAltitude:setText("Aimed Y : " .. math.floor(state.aimedHeight))
+            labelAimedAltitude:setText(("Aimed Y : %.1f"):format(state.aimedHeight))
 
             local prefix = state.isTrackerUI and "[P]" or "[D]"
             labelSelection:setText(prefix .. (state.monitorSelectedDest or "None"))
