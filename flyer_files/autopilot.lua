@@ -1,3 +1,5 @@
+local utils = require("flyer_files.utils")
+
 local AUTOPILOT = {}
 
 local function stopHorizontal(state)
@@ -5,6 +7,26 @@ local function stopHorizontal(state)
     state.backwardThrust = 0
     state.leftThrust = 0
     state.rightThrust = 0
+end
+
+local function forwardSpeed(state)
+    local heading = math.rad(90 - state.yaw + state.yawOffset)
+    return state.xVelocity * math.cos(heading) + state.zVelocity * math.sin(heading)
+end
+
+local function brakeToStop(state)
+    stopHorizontal(state)
+    local speed = forwardSpeed(state)
+
+    if math.abs(speed) <= state.arrivalSpeed then return true end
+
+    local force = math.ceil(utils.clamp(math.abs(speed) * 2, 0, 15))
+    if speed > 0 then 
+        state.backwardThrust = force
+    else
+        state.forwardThrust = force
+    end
+    return false
 end
 
 local function steer(state, angleError, dt)
@@ -108,10 +130,10 @@ local function update(state)
     end
 
     if state.destinationDistance <= state.destinationRadius and not state.trackerEnabled then
-        stopHorizontal(state)
-
-        state.autopilotEnabled = false
         state.aimedHeight = state.destination_y
+        if brakeToStop(state) then
+            state.autopilotEnabled = false
+        end        
         return
     end
         
@@ -141,8 +163,8 @@ local function update(state)
     end
 
     local baseTargetSpeed = math.max(0, (state.destinationDistance - state.destinationRadius) * state.brakingFactor)
-    if baseTargetSpeed > 0 and baseTargetSpeed < 3 then
-        baseTargetSpeed = 3
+    if baseTargetSpeed > 0 and baseTargetSpeed < state.minApproachSpeed then
+        baseTargetSpeed = state.minApproachSpeed
     end
 
     local targetSpeed = math.min(state.maxTravelSpeed, baseTargetSpeed + targetAwaySpeed)

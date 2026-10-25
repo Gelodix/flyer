@@ -19,6 +19,8 @@ CONFIG.DEFAULTS = {
         maxTravelSpeed = 300,
         brakingFactor = 0.1333,
         trackerYOffset = 50,
+        arrivalSpeed = 0.5,
+        minApproachSpeed = 3,
     },
 
     autoStablePower = {
@@ -28,7 +30,8 @@ CONFIG.DEFAULTS = {
     },
 
     bluemapUrl ="https://projectcrowbar.com/bluemap/maps/s3_overworld/live/players.json",
-    -- optional aliases for the relays used for I/O
+    
+    -- optional aliases for the relays used for I/O. Ex: { front_relay = "redstone_relay_35"}
     relays = {},
 
     inputs = {
