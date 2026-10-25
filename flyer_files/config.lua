@@ -28,25 +28,25 @@ CONFIG.DEFAULTS = {
     },
 
     bluemapUrl ="https://projectcrowbar.com/bluemap/maps/s3_overworld/live/players.json",
-
-    relay = "front",
+    -- optional aliases for the relays used for I/O
+    relays = {},
 
     inputs = {
         toggleAltitude   = { device = "computer", side = "top" },
         toggleAutopilot  = { device = "computer", side = "bottom" },
         changeAPMode     = { device = "computer", side = "left" },
-        increaseAltitude = { device = "relay", side = "left" },
-        decreaseAltitude = { device = "relay", side = "right" },
-        scrollUp         = { device = "relay", side = "top" },
-        scrollDown       = { device = "relay", side = "bottom" },
-        confirmDest      = { device = "relay", side = "front" },
+        increaseAltitude = { device = "front", side = "left" },
+        decreaseAltitude = { device = "front", side = "right" },
+        scrollUp         = { device = "front", side = "top" },
+        scrollDown       = { device = "front", side = "bottom" },
+        confirmDest      = { device = "front", side = "front" },
     },
     outputs = {
-        upward   = { device = "relay", side = "front" },
-        forward  = { device = "relay", side = "top" },
-        backward = { device = "relay", side = "bottom" },
-        left     = { device = "relay", side = "left" },
-        right    = { device = "relay", side = "right" },
+        upward   = { device = "front", side = "front" },
+        forward  = { device = "front", side = "top" },
+        backward = { device = "front", side = "bottom" },
+        left     = { device = "front", side = "left" },
+        right    = { device = "front", side = "right" },
     },
     persistence = {
         enabled = true,
@@ -83,6 +83,19 @@ local function merge(defaults, user)
     return out, changed
 end
 
+local function migrate(user)
+    if type(user.relay) ~= "string" then return false end
+    for _, pins in ipairs({user.inputs or {}, user.outputs or {}}) do
+        for _, pin in pairs(pins) do
+            if type(pin) == "table" and pin.device == "relay" then 
+                pin.device = user.relay 
+            end
+        end
+    end
+    user.relay = nil
+    return true
+end
+
 function CONFIG.save(cfg)
     utils.secureWriteFile(CONFIG.FILE_NAME, false, textutils.serialize(cfg), true)
 end
@@ -93,13 +106,13 @@ function CONFIG.load()
     if content then
         user = textutils.unserialize(content)
         if type(user) ~= "table" then
-            error(CONFIG.FILE_NAME .. "is invalid (syntax error?)", 0)
+            error(CONFIG.FILE_NAME .. " is invalid (syntax error?)", 0)
         end
     end
     
-
+    local migrated = migrate(user)
     local cfg, changed = merge(CONFIG.DEFAULTS, user)
-    if changed then CONFIG.save(cfg) end
+    if changed or migrated then CONFIG.save(cfg) end
     return cfg
 end
 
