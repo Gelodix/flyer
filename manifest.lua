@@ -30,7 +30,7 @@ return {
             ["remote_installer.lua"] = "remote_installer.lua",
             ["remote_files/startup.lua"] = "startup.lua",
             ["remote_files/flyer_remote.lua"] = "flyer_remote.lua",
-            ["remote_files/client.lua"] = "client.lua",
+            ["remote_files/client.lua"] = "remote_files/client.lua",
             ["remote_files/ships.lua"] = "remote_files/ships.lua",
             ["flyer_files/auth.lua"] = "flyer_files/auth.lua",
             ["flyer_files/libraries/SHA256.lua"] = "flyer_files/libraries/SHA256.lua",
