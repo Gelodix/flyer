@@ -6,4 +6,4 @@ print `wget run https://raw.githubusercontent.com/Gelodix/flyer/main/installer.l
 
 ## Licenses
 
-using ANAVRINS's SHA256/HMAC/PBKDF2 library under MIT license pastebin.com/6UV4qfNF
+using a minified version of ANAVRINS's SHA256/HMAC/PBKDF2 library under MIT license pastebin.com/6UV4qfNF

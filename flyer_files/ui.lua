@@ -26,14 +26,117 @@ local function cleanCoordinateInput(self)
     end
 end
 
-local function createMainUI(ctx, main, shared)
-    local state, basalt = ctx.state, ctx.basalt
+local function place(element, pos)
+    element:setPosition(pos[1], pos[2])
+    if pos[3] then element:setSize(pos[3], pos[4] or 1) end
+    return element
+end
 
-    local labelCurrentAltitude = main:addLabel():setPosition(2, 2):setText("Current altitude : --")
-    local labelAimedAltitude = main:addLabel():setPosition(2, 3):setText("Aimed altitude : " .. state.aimedHeight)
+local LAYOUTS = {}
 
-    main:addLabel():setPosition(2, 4):setText("New altitude :")
-    local inputAltitude = main:addInput():setPosition(17, 4):setSize(7, 1)
+LAYOUTS.base = {
+    flight = {
+        current = {2, 2},
+        currentText = "Current altitude : %d",
+
+        aimed = {2, 3},
+        aimedText = "Aimed altitude : %.1f",
+
+        newLabel = {2, 4},
+        newText = "New altitude :",
+        newInput = {17, 4, 7},
+
+        heightControl = {2, 6, 22},
+        heightControlText = "Altitude control: ",
+
+        autopilot = {2, 12, 16},
+        autopilotText = "Autopilot: ",
+
+        distance = {2, 14},
+        distanceText = "Dist: %dm",
+
+        yaw = {2, 15},
+        yawText = "Yaw/Aim: %1.f / %1.f",
+
+        status = {2, 16},
+        statusText = "Target: %d, %d",
+        noTargetText = "NO TARGET",
+    },
+
+    manual = { x = {2, 8}, z = {2, 9}, y = {2, 10}, inputX = 10, inputWidth = 8},
+
+    list = {
+        label = {27, 2}, list = {27, 3, 22, 12}, mode = {27, 16, 22},
+        playersText = "TrackPlayerMode", savedText = " Saved destinations",
+    },
+
+    manager = {
+        rows = {name = 2, xz = 5, y = 8, addEdit = 11, del = 12, upDown = 13, pos = 15},
+        yLabel = "Y (optional):", yInline = false,
+        open = {2, 18, 22}
+    },
+}
+
+LAYOUTS.compact = {
+    tabs = {"Fly", "Coords", "Manage"},
+    flight = {
+        current = {2, 1},
+        currentText = "Y now: %d",
+
+        aimed = {2, 2},
+        aimedText = "Y aim: %.1f",
+
+        newLabel = {2, 3},
+        newText = "Set y:",
+        newInput = {9, 3, 7},
+
+        heightControl = {2, 5, 17},
+        heightControlText = "Altitude: ",
+
+        autopilot = {2, 6, 17},
+        autopilotText = "Autopilot: ",
+
+        distance = {2, 8},
+        distanceText = "Dist: %dm",
+
+        yaw = {2, 9},
+        yawText = "Yaw %1.f / %1.f",
+
+        status = {2, 10},
+        statusText = "Tgt: %d, %d",
+        noTargetText = "NO TARGET",
+    },
+
+    manual = { 
+        x = {2, 2}, z = {2, 3}, y = {2, 4}, inputX = 10, inputWidth = 8,
+        button = {2, 6, 16}, hint = {2, 8},
+    },
+
+    list = {
+        label = {21, 1}, list = {21, 2, 18, 9}, mode = {21, 11, 18},
+        playersText = "Players", savedText = " Saved",
+    },
+
+    manager = {
+        rows = {name = 1, xz = 3, y = 5, addEdit = 6, del = 7, upDown = 8, pos = 9, status = 11,},
+        yLabel = "Y:", yInline = true,
+    },
+}
+
+local function isCompact()
+    local w, h = term.getSize()
+    return w < 51 or h < 19
+end
+
+
+local function createFlightUI(ctx, frame, L)
+    local state = ctx.state
+
+    local labelCurrentAltitude = place(frame:addLabel(), L.current)
+    local labelAimedAltitude = place(frame:addLabel(), L.aimed)
+
+    place(frame:addLabel(), L.newLabel):setText(L.newText)
+    local inputAltitude = place(frame:addInput(), L.newInput)
     inputAltitude:onChange(cleanAltitudeInput)
     inputAltitude:onEnter(function()
         local newAltitude = tonumber(inputAltitude:getText())
@@ -43,49 +146,81 @@ local function createMainUI(ctx, main, shared)
         end
     end)
 
-    local btnToggleAC = main:addButton():setPosition(2, 6):setSize(22, 1):setText("Altitude Control: OFF")
-
+    local btnToggleAC = place(frame:addButton(), L.heightControl)
     btnToggleAC:onClick(function()
         state.heightControlEnabled = not state.heightControlEnabled
     end)
 
-    main:addLabel():setPosition(2,8):setText("Dest X:")
-    local inputDestX = main:addInput():setPosition(10, 8):setSize(8,1)
-    main:addLabel():setPosition(2,9):setText("Dest Z:")
-    local inputDestZ = main:addInput():setPosition(10, 9):setSize(8,1)
-    main:addLabel():setPosition(2,10):setText("Dest Y:")
-    local inputDestY = main:addInput():setPosition(10, 10):setSize(8,1)
-
-    local function setDestination()
-        local x = tonumber(inputDestX:getText())
-        local z = tonumber(inputDestZ:getText())
-        local y = tonumber(inputDestY:getText())
-
-        if x and z then
-            state:setDestination(nil, x, z, y)
-            inputDestX:setText("")
-            inputDestZ:setText("")
-            inputDestY:setText("")
-        end
-    end
-
-    for _, input in ipairs({ inputDestX, inputDestZ, inputDestY }) do
-        input:onChange(cleanCoordinateInput)
-        input:onEnter(setDestination)
-    end
-
-    local btnToggleAP = main:addButton():setPosition(2, 12):setSize(16, 1):setText("Autopilot: OFF"):setBackground(colors.red)
+    local btnToggleAP = place(frame:addButton(), L.autopilot)
     btnToggleAP:onClick(function()
         state:toggleAutopilot()
     end)
 
-    local labelDist = main:addLabel():setPosition(2, 14):setText("Dist: --")
-    local labelYaw = main:addLabel():setPosition(2, 15):setText("Yaw/Aim: --/--")
-    local labelStatus = main:addLabel():setPosition(2, 16):setText("NO TARGET"):setForeground(colors.gray)
-    
-    local listLabel = main:addLabel():setPosition(27, 2):setText("Destinations")
-    local listDestinations = main:addList():setPosition(27, 3):setSize(22, 12):setBackground(colors.gray)
+    local labelDist = place(frame:addLabel(), L.distance)
+    local labelYaw = place(frame:addLabel(), L.yaw)
+    local labelStatus = place(frame:addLabel(), L.status):setText(L.noTargetText):setForeground(colors.gray)
 
+    return function()
+        labelCurrentAltitude:setText(L.currentText:format(math.floor(state.currentHeight)))
+        labelAimedAltitude:setText(L.aimedText:format(state.aimedHeight))
+        labelDist:setText(L.distanceText:format(math.floor(state.destinationDistance)))
+        labelYaw:setText(L.yawText:format(state.yaw, state.aimedAngle))
+
+        if state.hasSetDestination then
+            labelStatus:setText(L.statusText:format(math.floor(state.destination_x), math.floor(state.destination_z)))
+                :setForeground(colors.lightBlue)
+        end
+
+        btnToggleAC:setText(L.heightControlText .. (state.heightControlEnabled and "ON" or "OFF"))
+            :setBackground(state.heightControlEnabled and colors.green or colors.red)
+
+        btnToggleAP:setText(L.autopilotText .. (state.autopilotEnabled and "ON" or "OFF"))
+            :setBackground(state.autopilotEnabled and colors.green or colors.red)
+    end
+end
+
+local function createManualTargetUI(ctx, frame, L)
+    local state = ctx.state
+    local inputs = {}
+
+    for _, axis in ipairs({"x", "z", "y"}) do
+        local pos = L[axis]
+        frame:addLabel():setPosition(pos[1], pos[2]): setText("Dest " .. axis:upper() .. ":")
+        inputs[axis] = frame:addInput():setPosition(L.inputX, pos[2]):setSize(L.inputWidth, 1)
+    end
+
+    local function setDestination()
+        local x = tonumber(inputs.x:getText())
+        local z = tonumber(inputs.z:getText())
+        local y = tonumber(inputs.y:getText())
+
+        if x and z then
+            state:setDestination(nil, x, z, y)
+            for _, input in pairs(inputs) do input:setText("") end
+        end
+    end
+
+    for _, input in pairs(inputs) do
+        input:onChange(cleanCoordinateInput)
+        input:onEnter(setDestination)
+    end
+
+    if L.button then
+        place(frame:addButton(), L.button):setText("Set target"):setBackground(colors.blue)
+            :onClick(setDestination)
+    end
+
+    if L.hint then
+        place(frame:addLabel(), L.hint):setText("Y is optional"):setForeground(colors.gray)
+    end
+end
+
+local function createTargetList(ctx, frame, L, shared)
+    local state = ctx.state
+
+    local listLabel = place(frame:addLabel(), L.label):setText("Destinations")
+    local listDestinations = place(frame:addList(), L.list):setBackground(colors.gray)
+    
     function shared.fillSavedDest()
         listDestinations:clear()
         for _, dest in ipairs(ctx.savedDestinations) do
@@ -108,17 +243,17 @@ local function createMainUI(ctx, main, shared)
         end
     end)
 
-    local btnToggleTrackMode = main:addButton():setPosition(27, 16):setSize(22,1):setText("TrackPlayerMode"):setBackground(colors.cyan)
+    local btnToggleTrackMode = place(frame:addButton(), L.mode):setText(L.playersText):setBackground(colors.cyan)
     btnToggleTrackMode:onClick(function()
         state.isTrackerUI = not state.isTrackerUI
         if state.isTrackerUI then
-            btnToggleTrackMode:setText("Saved destinations"):setBackground(colors.orange)
+            btnToggleTrackMode:setText(L.savedText):setBackground(colors.orange)
             listLabel:setText("Live Players")
             listDestinations:clear()
             listDestinations:addItem("Loading...")
             state.playersUpdates =  true
         else
-            btnToggleTrackMode:setText("TrackPlayerMode"):setBackground(colors.cyan)
+            btnToggleTrackMode:setText(L.playersText):setBackground(colors.cyan)
             listLabel:setText("Destinations")
             state.trackerEnabled = false
             state.trackedPlayerName = nil
@@ -127,50 +262,25 @@ local function createMainUI(ctx, main, shared)
 
     end)
 
+    return function()
+        if state.isTrackerUI and state.playersUpdates then
+            state.playersUpdates = false
 
-    basalt.schedule(function()
-        while true do
-            labelCurrentAltitude:setText("Current altitude : " .. math.floor(state.currentHeight))
-            labelAimedAltitude:setText(("Aimed altitude : %.1f"):format(state.aimedHeight))
-            labelDist:setText("Dist: " .. math.floor(state.destinationDistance) .. "m")
-            labelYaw:setText(string.format("Yaw/Aim: %1.f / %1.f", state.yaw, state.aimedAngle))
-
-            if state.hasSetDestination then
-                labelStatus:setText(string.format("Target: %d, %d", state.destination_x, state.destination_z)):setForeground(colors.lightBlue)
+            listDestinations:clear()
+            for _,p in ipairs(ctx.players) do
+                listDestinations:addItem(p.name)
             end
-            
-            if state.autopilotEnabled then
-                btnToggleAP:setText("Autopilot: ON"):setBackground(colors.green)
-            else
-                btnToggleAP:setText("Autopilot: OFF"):setBackground(colors.red)
-            end
-
-            if state.heightControlEnabled then
-                btnToggleAC:setText("Altitude Control: ON"):setBackground(colors.green)
-            else
-                btnToggleAC:setText("Altitude Control: OFF"):setBackground(colors.red)
-            end
-
-            if state.isTrackerUI and state.playersUpdates then
-                state.playersUpdates = false
-
-                listDestinations:clear()
-                for _,p in ipairs(ctx.players) do
-                    listDestinations:addItem(p.name)
-                end
-                if state.trackedPlayerName then listDestinations:selectItem(state.trackedPlayerName, false) end
-            end
-
-            sleep(0.1)
+            if state.trackedPlayerName then listDestinations:selectItem(state.trackedPlayerName, false) end
         end
-    end)
+    end
 end
 
-local function createDestManagerUI(ctx, main, shared)
+local function createDestManagerUI(ctx, frame, L, shared, onBack)
     local state = ctx.state
     local saved = ctx.savedDestinations
+    local rows = L.rows
 
-    local w, h = main:getSize()
+    local w, h = frame:getSize()
     local leftW = math.floor(w / 2)
     local rightW = w - leftW
     local inputW = leftW - 2
@@ -178,45 +288,49 @@ local function createDestManagerUI(ctx, main, shared)
     local col2 = 2 + halfW + 1
     local col2W = inputW - halfW - 1
 
-    local btnOpen = main:addButton():setPosition(2, 18):setSize(22, 1)
-        :setText("Manage destinations"):setBackground(colors.blue)
-
-    local view = main:addFrame():setPosition(1, 1):setSize(w, h)
-        :setBackground(colors.black):setVisible(false):toFront()
-
-    local leftPanel = view:addFrame():setPosition(1, 1):setSize(leftW, h):setBackground(colors.gray)
-    local rightPanel = view:addFrame():setPosition(leftW + 1, 1):setSize(rightW, h):setBackground(colors.black)
+    local leftPanel = frame:addFrame():setPosition(1, 1):setSize(leftW, h):setBackground(colors.gray)
+    local rightPanel = frame:addFrame():setPosition(leftW + 1, 1):setSize(rightW, h):setBackground(colors.black)
 
     local list = rightPanel:addList():setPosition(1, 1):setSize(rightW, h):setScrollbar("auto")
 
-    leftPanel:addLabel():setText("Name:"):setPosition(2, 2)
-    local inName = leftPanel:addInput():setPosition(2, 3):setSize(inputW, 1)
+    leftPanel:addLabel():setText("Name:"):setPosition(2, rows.name)
+    local inName = leftPanel:addInput():setPosition(2, rows.name + 1):setSize(inputW, 1)
 
-    leftPanel:addLabel():setText("X:"):setPosition(2, 5)
-    local inX = leftPanel:addInput():setPosition(2, 6):setSize(halfW, 1)
+    leftPanel:addLabel():setText("X:"):setPosition(2, rows.xz)
+    local inX = leftPanel:addInput():setPosition(2, rows.xz + 1):setSize(halfW, 1)
         :setMaxLength(5):setPattern("^[-%d]?%d*$")
 
-    leftPanel:addLabel():setText("Z:"):setPosition(col2, 5)
-    local inZ = leftPanel:addInput():setPosition(col2, 6):setSize(col2W, 1)
+    leftPanel:addLabel():setText("Z:"):setPosition(col2, rows.xz)
+    local inZ = leftPanel:addInput():setPosition(col2, rows.xz + 1):setSize(col2W, 1)
         :setMaxLength(5):setPattern("^[-%d]?%d*$")
 
-    leftPanel:addLabel():setText("Y (optional):"):setPosition(2, 8)
-    local inY = leftPanel:addInput():setPosition(2, 9):setSize(inputW, 1)
-        :setMaxLength(4):setPattern("^[-%d]?%d*$")
+    leftPanel:addLabel():setText(L.yLabel):setPosition(2, rows.y)
+    local inY = leftPanel:addInput():setMaxLength(4):setPattern("^[-%d]?%d*$")
+    if L.yInline then
+        local labelW = #L.yLabel + 1
+        inY:setPosition(2 + labelW, rows.y):setSize(inputW - labelW, 1)
+    else
+        inY:setPosition(2, rows.y + 1):setSize(inputW, 1)
+    end
 
-    local btnAdd = leftPanel:addButton():setText("Add"):setPosition(2, 11):setSize(halfW, 1)
+
+
+    local btnAdd = leftPanel:addButton():setText("Add"):setPosition(2, rows.addEdit):setSize(halfW, 1)
         :setBackground(colors.blue):setForeground(colors.white)
-    local btnEdit = leftPanel:addButton():setText("Edit"):setPosition(col2, 11):setSize(col2W, 1)
-    local btnDel = leftPanel:addButton():setText("Del"):setPosition(2, 12):setSize(inputW, 1)
+    local btnEdit = leftPanel:addButton():setText("Edit"):setPosition(col2, rows.addEdit):setSize(col2W, 1)
+    local btnDel = leftPanel:addButton():setText("Del"):setPosition(2, rows.del):setSize(inputW, 1)
         :setBackground(colors.red):setForeground(colors.white)
-    local btnUp = leftPanel:addButton():setText("/\\ Up"):setPosition(2, 13):setSize(halfW, 1)
-    local btnDown = leftPanel:addButton():setText("\\/ Down"):setPosition(col2, 13):setSize(col2W, 1)
-    local btnPos = leftPanel:addButton():setText("Current pos"):setPosition(2, 15):setSize(inputW, 1)
+    local btnUp = leftPanel:addButton():setText("/\\ Up"):setPosition(2, rows.upDown):setSize(halfW, 1)
+    local btnDown = leftPanel:addButton():setText("\\/ Down"):setPosition(col2, rows.upDown):setSize(col2W, 1)
+    local btnPos = leftPanel:addButton():setText("Current pos"):setPosition(2, rows.pos):setSize(inputW, 1)
         :setBackground(colors.cyan):setForeground(colors.black)
 
-    local status = leftPanel:addLabel():setText(""):setPosition(2, h - 3):setSize(inputW, 1)
-    local btnBack = leftPanel:addButton():setText("Back"):setPosition(2, h - 1):setSize(inputW, 1)
-        :setBackground(colors.orange)
+    local status = leftPanel:addLabel():setText(""):setPosition(2, rows.status or h - 3):setSize(inputW, 1)
+
+    if onBack then
+        leftPanel:addButton():setText("Back"):setPosition(2, h - 1):setSize(inputW, 1)
+            :setBackground(colors.orange):onClick(onBack)
+    end
 
     local selectedIndex = nil
 
@@ -337,22 +451,82 @@ local function createDestManagerUI(ctx, main, shared)
         inY:setText(tostring(math.floor(state.currentHeight)))
     end)
 
-    btnBack:onClick(function() view:setVisible(false) end)
-
-    btnOpen:onClick(function()
+    return function()
         selectedIndex = nil
         clearInputs()
         setStatus("")
         refresh()
+    end
+end
+
+local function createBaseUI(ctx, main, shared, updaters)
+    local L = LAYOUTS.base
+    table.insert(updaters, createFlightUI(ctx, main, L.flight))
+    createManualTargetUI(ctx, main, L.manual)
+    table.insert(updaters, createTargetList(ctx, main, L.list, shared))
+
+    local btnOpen = place(main:addButton(), L.manager.open):setText("Manage destinations")
+        :setBackground(colors.blue)
+    
+    local w, h = main:getSize()
+    local view = main:addFrame():setPosition(1, 1):setSize(w, h)
+        :setBackground(colors.black):setVisible(false)
+    local openManager = createDestManagerUI(ctx, view, L.manager, shared, function()
+        view:setVisible(false)
+    end)
+
+    btnOpen:onClick(function()
+        openManager()
         view:setVisible(true):toFront()
     end)
 end
 
+local function createCompactUI(ctx, main, shared, updaters)
+    local L = LAYOUTS.compact
+    local w, h = main.getSize()
+
+    local pages, tabButtons = {}, {}
+    local x = 1
+    for i, name in ipairs(L.tabs) do
+        pages[i] = main:addFrame():setPosition(1, 2):setSize(w, h - 1):setBackground(colors.black)
+        tabButtons[i] = main:addButton():setPosition(x, 1):setSize(#name + 2, 1):setText(name)
+        x = x + #name + 3
+    end
+
+    table.insert(updaters, createFlightUI(ctx, pages[1], L.flight))
+    table.insert(updaters, createTargetList(ctx, pages[1], L.list, shared))
+    createManualTargetUI(ctx, pages[2], L.manual)
+    local openManager = createDestManagerUI(ctx, pages[3], L.manager, shared)
+
+    local function selectTab(index)
+        for i, page in ipairs(pages) do
+            page:setVisible(i == index)
+            tabButtons[i]:setBackground(i == index and colors.blue or colors.gray)
+        end
+        if index == 3 then openManager() end
+    end
+    
+    for i, button in ipairs(tabButtons) do
+        button:onClick(function() selectTab(i) end)
+    end
+    selectTab(1)
+end
+
 function UI.create(ctx)
     local main = ctx.basalt.getMainFrame()
-    local shared = {}
-    createMainUI(ctx, main, shared)
-    createDestManagerUI(ctx, main, shared)
+    local shared, updaters = {}, {}
+
+    if isCompact() then
+        createCompactUI(ctx, main, shared, updaters)
+    else
+        createBaseUI(ctx, main, shared, updaters)
+    end
+    ctx.basalt.schedule(function()
+        while true do
+            for _, update in ipairs(updaters) do update() end
+            sleep(0.1)
+        end
+    end)
 end
 
 return UI
