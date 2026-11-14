@@ -483,7 +483,7 @@ end
 
 local function createCompactUI(ctx, main, shared, updaters)
     local L = LAYOUTS.compact
-    local w, h = main.getSize()
+    local w, h = main:getSize()
 
     local pages, tabButtons = {}, {}
     local x = 1

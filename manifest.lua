@@ -4,7 +4,7 @@ return {
         files = { "installer.lua", "startup.lua" },
     },
 
-    version = "2.2.6",
+    version = "2.2.7",
     files = {
         "config.lua",
         "state.lua",
